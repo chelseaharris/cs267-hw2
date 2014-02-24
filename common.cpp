@@ -13,11 +13,11 @@ double size;
 //
 //  tuned constants
 //
-#define density 0.0005
-#define mass    0.01
-#define cutoff  0.01
-#define min_r   (cutoff/100)
-#define dt      0.0005
+#define DENSITY 0.0005
+#define MASS    0.01
+#define CUTOFF  0.01
+#define MIN_R   (CUTOFF/100)
+#define DT      0.0005
 
 //
 //  timer
@@ -41,7 +41,7 @@ double read_timer( )
 //
 void set_size( int n )
 {
-    size = sqrt( density * n );
+    size = sqrt( DENSITY * n );
 }
 
 //
@@ -91,25 +91,27 @@ void apply_force( particle_t &particle, particle_t &neighbor , double *dmin, dou
     double dx = neighbor.x - particle.x;
     double dy = neighbor.y - particle.y;
     double r2 = dx * dx + dy * dy;
-    if( r2 > cutoff*cutoff )
+    // declare frequently used scalars
+    double r = sqrt( r2 );
+    double frac_r = r/CUTOFF;
+    double frac_r2 = r2 / (CUTOFF*CUTOFF);
+    if( r2 > CUTOFF*CUTOFF )
         return;
 	if (r2 != 0)
         {
-	   if (r2/(cutoff*cutoff) < *dmin * (*dmin))
-	      *dmin = sqrt(r2)/cutoff;
-           (*davg) += sqrt(r2)/cutoff;
+	   if ( frac_r2  < *dmin * (*dmin))
+	     *dmin = frac_r;
+           (*davg) += frac_r;
            (*navg) ++;
         }
 		
-    r2 = fmax( r2, min_r*min_r );
-    double r = sqrt( r2 );
- 
+    r2 = fmax( r2, MIN_R*MIN_R );
     
 	
     //
     //  very simple short-range repulsive force
     //
-    double coef = ( 1 - cutoff / r ) / r2 / mass;
+    double coef = ( 1 - CUTOFF / r ) / r2 / MASS;
     particle.ax += coef * dx;
     particle.ay += coef * dy;
 }
@@ -123,10 +125,10 @@ void move( particle_t &p )
     //  slightly simplified Velocity Verlet integration
     //  conserves energy better than explicit Euler method
     //
-    p.vx += p.ax * dt;
-    p.vy += p.ay * dt;
-    p.x  += p.vx * dt;
-    p.y  += p.vy * dt;
+    p.vx += p.ax * DT;
+    p.vy += p.ay * DT;
+    p.x  += p.vx * DT;
+    p.y  += p.vy * DT;
 
     //
     //  bounce from walls
