@@ -12,6 +12,9 @@ int main( int argc, char **argv )
     int navg,nabsavg=0;
     double davg,dmin, absmin=1.0, absavg=0.0;
 
+    //
+    // argument parsing
+    // 
     if( find_option( argc, argv, "-h" ) >= 0 )
     {
         printf( "Options:\n" );
