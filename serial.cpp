@@ -2,7 +2,49 @@
 #include <stdio.h>
 #include <assert.h>
 #include <math.h>
+#include <vector>
 #include "common.h"
+
+
+// structure for storing the binned particles
+typedef std::vector< std::vector< particle_t* > > BinnedParticles;
+typedef struct
+{
+  BinnedParticles binned_parts;
+  int num_bins;
+  int bin_wid;
+} binned_t;
+
+// function to bin particles
+// assumes square bins
+binned_t bin_particles( particle_t* particles, const int n ) 
+{
+  double grid_size = get_size();
+  double bin_wid = 2*get_cutoff();
+  int num_bins_side = ceil( grid_size/bin_wid ); // number of bins in one direction
+  int num_bins = num_bins_side*num_bins_side; // total number of bins
+
+  BinnedParticles binned_particles(num_bins);
+
+  // bin the particles
+  particle_t* end_ptr = particles + n;
+  particle_t* p_ptr = particles;
+  do {
+    int bin_x = (int)floor( (*p_ptr).x / bin_wid ); // bin number in x direction
+    int bin_y = (int)floor( (*p_ptr).y / bin_wid ); // bin number in y direction
+    int bin_i = num_bins_side*bin_x + bin_y; //linear bin index;
+    binned_particles[bin_i].push_back(p_ptr) ; 
+    p_ptr++;
+  } while (p_ptr != end_ptr);
+
+  // put all necessary information into a binned_t structure to return
+  binned_t particle_bins;
+  particle_bins.num_bins = num_bins;
+  particle_bins.bin_wid = bin_wid;
+  particle_bins.binned_parts = binned_particles;
+
+  return particle_bins;
+}
 
 //
 //  benchmarking program
@@ -37,7 +79,8 @@ int main( int argc, char **argv )
     particle_t *particles = (particle_t*) malloc( n * sizeof(particle_t) );
     set_size( n );
     init_particles( n, particles );
-    
+
+
     //
     //  simulate a number of time steps
     //
