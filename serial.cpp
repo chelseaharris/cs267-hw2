@@ -12,17 +12,25 @@ typedef struct
 {
   BinnedParticles binned_parts;
   int num_bins;
-  int bin_wid;
+  double bin_wid;
 } binned_t;
 
 // function to bin particles
 // assumes square bins
 binned_t bin_particles( particle_t* particles, const int n ) 
 {
+  double bin_wid = 2*get_cutoff(); // ideal bin width
+
   double grid_size = get_size();
-  double bin_wid = 2*get_cutoff();
-  int num_bins_side = ceil( grid_size/bin_wid ); // number of bins in one direction
+  int num_bins_side = floor( grid_size/bin_wid ); // number of bins in one direction
+  bin_wid = grid_size/num_bins_side; // adjust to avoid having bin where there is no grid
   int num_bins = num_bins_side*num_bins_side; // total number of bins
+
+  /* //for testing the binning:
+  printf("Grid size: %e\n",grid_size);
+  printf("Cutoff: %e\n",get_cutoff());
+  printf("Bin width: %e\n",bin_wid);
+  */
 
   BinnedParticles binned_particles(num_bins);
 
@@ -80,6 +88,31 @@ int main( int argc, char **argv )
     set_size( n );
     init_particles( n, particles );
 
+
+    /*
+    //
+    // Check correctness of the binning function 
+    // 
+    // make sure particle positions don't change
+    for( int i_p=0; i_p<n; i_p++ ) printf("%e %e \n", particles[i_p].x, particles[i_p].y) ;
+
+    binned_t bins = bin_particles(particles, n);
+    // make sure these variables are OK
+    printf("Number of bins: %d\n", bins.num_bins);
+    printf("Bin size: %e\n",bins.bin_wid);
+    // make sure particles are binned properly
+    for( int i_bin=0; i_bin < bins.num_bins; i_bin++)
+      {	
+	std::vector< particle_t* > this_bin = bins.binned_parts[i_bin];
+	int num_p_in = this_bin.size();
+	printf("%d\n",num_p_in);
+	if (num_p_in > 0)
+	  {
+	    for( int i_p=0; i_p<num_p_in; i_p++ ) printf("%e %e \n", this_bin[i_p]->x, this_bin[i_p]->y);
+	  }
+      }
+    return 0;
+    */
 
     //
     //  simulate a number of time steps
