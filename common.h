@@ -35,6 +35,7 @@ typedef struct
   BinnedParticles binned_parts; // all the bins and their particles
   int num_bins; // total number of bins. bins per side is sqrt this
   double bin_wid; //physical bin width
+  int shiftlist[9];
 } bins_t;
 
 //

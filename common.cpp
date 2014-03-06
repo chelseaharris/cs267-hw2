@@ -100,11 +100,23 @@ void init_particles( int n, particle_t *p )
 // function to bin particles (square bins)
 bins_t bin_particles( particle_t* particles, const int n ) 
 {
+
+  bins_t particle_bins;
+
   double bin_wid = get_cutoff(); // ideal bin width
   double grid_size = get_size();
   int num_bins_side = floor( grid_size/bin_wid ); // number of bins in one direction (some grid unbinned)
   bin_wid = grid_size/num_bins_side; // adjust bin width so that bins fill the grid
   int num_bins = num_bins_side*num_bins_side; // total number of bins
+
+  particle_bins.num_bins = num_bins;
+  particle_bins.bin_wid = bin_wid;
+
+  // offsets to make a 3x3 box of bins
+  // goes from lower left corner to upper right corner, row-wise
+  int shifts[9] = { -num_bins_side-1, -num_bins_side, -num_bins_side+1, -1, 0, 1, num_bins_side-1, num_bins_side, num_bins_side+1 };
+
+  particle_bins.shiftlist = shifts;
 
   /* //for testing the binning:
   printf("Grid size: %e\n",grid_size);
@@ -125,10 +137,6 @@ bins_t bin_particles( particle_t* particles, const int n )
     p_ptr++;
   } while (p_ptr != end_ptr);
 
-  // put all necessary information into a binned_t structure to return
-  bins_t particle_bins;
-  particle_bins.num_bins = num_bins;
-  particle_bins.bin_wid = bin_wid;
   particle_bins.binned_parts = binned_particles;
 
   return particle_bins;
@@ -168,10 +176,12 @@ void apply_force( particle_t &particle, particle_t &neighbor )//, double *dmin, 
     particle.ay += coef * dy;
 }
 
-
-/*void apply_force_in_bin( bins_t &part_bins )
+// apply force to the particles in a bin; only look at 
+// adjacent bins
+/*void apply_force_in_bin( bins_t &part_bins, int i_bin )
 {
     
+
 }*/
 
 // separate out the part that gets statistics, since these are not always wanted
