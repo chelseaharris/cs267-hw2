@@ -114,9 +114,15 @@ bins_t bin_particles( particle_t* particles, const int n )
 
   // offsets to make a 3x3 box of bins
   // goes from lower left corner to upper right corner, row-wise
-  int shifts[9] = { -num_bins_side-1, -num_bins_side, -num_bins_side+1, -1, 0, 1, num_bins_side-1, num_bins_side, num_bins_side+1 };
-
-  particle_bins.shiftlist = shifts;
+  particle_bins.shiftlist[0] = -num_bins_side-1;
+  particle_bins.shiftlist[1] = -num_bins_side  ;
+  particle_bins.shiftlist[2] = -num_bins_side+1;
+  particle_bins.shiftlist[3] = -1              ;
+  particle_bins.shiftlist[4] = 0               ;
+  particle_bins.shiftlist[5] = 1               ;
+  particle_bins.shiftlist[6] = num_bins_side-1 ;
+  particle_bins.shiftlist[7] = num_bins_side   ;
+  particle_bins.shiftlist[8] = num_bins_side+1 ;
 
   /* //for testing the binning:
   printf("Grid size: %e\n",grid_size);
@@ -178,11 +184,40 @@ void apply_force( particle_t &particle, particle_t &neighbor )//, double *dmin, 
 
 // apply force to the particles in a bin; only look at 
 // adjacent bins
-/*void apply_force_in_bin( bins_t &part_bins, int i_bin )
+void apply_force_in_bin( bins_t &part_bins, int i_bin )
 {
-    
+    int n_side = (int) sqrt(part_bins.num_bins);
+    /* for each particle in this bin
+     *    for each bin in shift list
+     *        for each particle in the bin 
+     *            if shift==0, check that it isn't the same particle
+     *            apply force between particles
+     */
+    std::vector< particle_t* > this_bin = part_bins.binned_parts[i_bin];
+    for ( int i_p=0; i_p<this_bin.size(); i_p++ )
+    {
+      for ( int i=0; i<9; i++ )
+      {
+	  int i_neighbor = i_bin + part_bins.shiftlist[i];
 
-}*/
+          // make sure you're in the grid 
+          if ( (i_neighbor!=i_bin) && 
+	       (( i_neighbor >= part_bins.num_bins) || // off top edge
+	        ( i_neighbor < 0 )                  || // off bottom edge
+  	        ( (i_neighbor + 1)%n_side == 0 )    || // off left edge
+                ( i_neighbor%n_side == 0 ))            // off right edge
+	     )
+		continue;
+
+          std::vector< particle_t* > adj_bin = part_bins.binned_parts[i_neighbor];
+          for ( int i_n=0; i_n<adj_bin.size(); i_n++ )
+	  {
+	    //if ( (i_bin == i_neighbor) && (n_ptr==p_ptr)) continue; // ensure two different particles
+	    apply_force( *(this_bin[i_p]), *(adj_bin[i_n]) ); // apply force on particle from neighbor
+	  } 
+      }
+    }
+}
 
 // separate out the part that gets statistics, since these are not always wanted
 void get_stats( particle_t &particle, particle_t &neighbor, double *dmin, double *davg, int *navg )
