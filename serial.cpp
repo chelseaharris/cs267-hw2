@@ -4,6 +4,7 @@
 #include <math.h>
 #include "common.h"
 
+extern int numBins; 
 //
 //  benchmarking program
 //
@@ -12,9 +13,6 @@ int main( int argc, char **argv )
     int navg,nabsavg=0;
     double davg,dmin, absmin=1.0, absavg=0.0;
 
-    //
-    // argument parsing
-    // 
     if( find_option( argc, argv, "-h" ) >= 0 )
     {
         printf( "Options:\n" );
@@ -36,8 +34,13 @@ int main( int argc, char **argv )
 
     particle_t *particles = (particle_t*) malloc( n * sizeof(particle_t) );
     set_size( n );
+	pbin_t* bins = (pbin_t*) malloc(numBins * sizeof(pbin_t));
+
+	FOR (i, numBins)
+		bins[i].ids = (int*) malloc(n*sizeof(int));
+		
     init_particles( n, particles );
-    
+    binning(particles, bins, n);
     //
     //  simulate a number of time steps
     //
@@ -51,19 +54,21 @@ int main( int argc, char **argv )
         //
         //  compute forces
         //
-        for( int i = 0; i < n; i++ )
-        {
-            particles[i].ax = particles[i].ay = 0;
-            for (int j = 0; j < n; j++ )
-				apply_force( particles[i], particles[j],&dmin,&davg,&navg);
-        }
+      FOR (i, n) {
+			particles[i].ax = 0; 
+			particles[i].ay = 0;
+		}
+ 
+
+		for(int i = 0; i < numBins; i++)
+			apply_force_bin(particles, bins, i, &dmin, &davg, &navg);
  
         //
         //  move particles
         //
         for( int i = 0; i < n; i++ ) 
             move( particles[i] );		
-
+		binning(particles, bins, n);
         if( find_option( argc, argv, "-no" ) == -1 )
         {
           //

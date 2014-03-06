@@ -9,6 +9,10 @@
 #include "common.h"
 
 double size;
+int binSize; 
+int numBins; 
+int shift[9];
+
 
 //
 //  tuned constants
@@ -16,7 +20,9 @@ double size;
 #define density 0.0005
 #define mass    0.01
 #define cutoff  0.01
+#define cutoff2 (cutoff*cutoff)
 #define min_r   (cutoff/100)
+#define min_r2  (min_r * min_r)
 #define dt      0.0005
 
 //
@@ -42,6 +48,11 @@ double read_timer( )
 void set_size( int n )
 {
     size = sqrt( density * n );
+	binSize = (int)ceil(size / cutoff);
+	numBins = binSize * binSize; 
+	shift[0] = -binSize-1; shift[1] = -binSize; shift[2] = -binSize+1;
+	shift[3] = -1; shift[4] = 0; shift[5] = 1; 
+	shift[6] = binSize-1; shift[7] = binSize; shift[8] = binSize+1;
 }
 
 //
@@ -91,21 +102,22 @@ void apply_force( particle_t &particle, particle_t &neighbor , double *dmin, dou
     double dx = neighbor.x - particle.x;
     double dy = neighbor.y - particle.y;
     double r2 = dx * dx + dy * dy;
-    if( r2 > cutoff*cutoff )
+    if( r2 > cutoff2 )
         return;
-	if (r2 != 0)
-        {
-	   if (r2/(cutoff*cutoff) < *dmin * (*dmin))
+
+	if (r2 != 0) {
+	   if (r2/(cutoff2) < *dmin * (*dmin))
 	      *dmin = sqrt(r2)/cutoff;
-           (*davg) += sqrt(r2)/cutoff;
+           
+	       (*davg) += sqrt(r2)/cutoff;
            (*navg) ++;
-        }
+    }
 		
-    r2 = fmax( r2, min_r*min_r );
-    double r = sqrt( r2 );
- 
-    
+	//printf("%f\n",min_r);
 	
+    r2 = fmax( r2, double(min_r2) );
+
+    double r = sqrt(r2);
     //
     //  very simple short-range repulsive force
     //
@@ -113,6 +125,7 @@ void apply_force( particle_t &particle, particle_t &neighbor , double *dmin, dou
     particle.ax += coef * dx;
     particle.ay += coef * dy;
 }
+
 
 //
 //  integrate the ODE
@@ -184,3 +197,39 @@ char *read_string( int argc, char **argv, const char *option, char *default_valu
         return argv[iplace+1];
     return default_value;
 }
+
+// _num: #particles 
+void binning(particle_t* _particles, pbin_t* _bins, int _num) { 
+	FOR (i, binSize)
+		FOR (j, binSize) {
+			int id = i*binSize+j;
+			_bins[id].num = 0;
+			_bins[id].row = i;
+			_bins[id].col = j;
+		}
+
+	FOR (i, _num) {
+		int id = (int)(floor(_particles[i].x / cutoff) * binSize 
+			+ floor(_particles[i].y / cutoff));
+		_bins[id].ids[_bins[id].num] = i;
+		_bins[id].num++;
+	}
+}
+
+void apply_force_bin(particle_t* _particles, pbin_t* _bins, int _binId,  double *dmin, double *davg, int *navg) {
+	pbin_t* bin = _bins+_binId;
+
+	FOR (i, bin->num) {
+		FOR (k, 9) {
+			int newId = _binId + shift[k];
+			//int newId = _binId + dx * binSize +dy;
+			if (newId >= 0 && newId < numBins) {
+				pbin_t* new_bin = _bins + newId; 
+				for(int j = 0; j < new_bin->num; j++)
+					apply_force(_particles[bin->ids[i]], _particles[new_bin->ids[j]], dmin, davg, navg);
+			}
+		}
+	}
+}
+
+
