@@ -43,7 +43,7 @@ double read_timer( );
 //
 void set_size( int n );
 void init_particles( int n, particle_t *p );
-void apply_force( particle_t &particle, particle_t &neighbor , double *dmin, double *davg, int *navg);
+void apply_force( particle_t &particle, particle_t &neighbor);
 void move( particle_t &p );
 // added functions
 
@@ -55,9 +55,12 @@ void move( particle_t &p );
 FILE *open_save( char *filename, int n );
 void save( FILE *f, int n, particle_t *p );
 
+
 // added functions
 void binning(particle_t* _particles, pbin_t* _bins, int _num);
-void apply_force_bin(particle_t* _particles,  pbin_t* _bins, int _binId,  double *dmin, double *davg, int *navg);
+void apply_force_bin(particle_t* _particles,  pbin_t* _bins, int _binId);
+void get_statistics_bin(particle_t* _particles,  pbin_t* _bins, int _binId, double *dmin, double *davg, int *navg);
+void get_statistics( particle_t &particle, particle_t &neighbor , double *dmin, double *davg, int *navg);
 
 
 //

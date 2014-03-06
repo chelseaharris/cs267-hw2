@@ -96,7 +96,7 @@ void init_particles( int n, particle_t *p )
 //
 //  interact two particles
 //
-void apply_force( particle_t &particle, particle_t &neighbor , double *dmin, double *davg, int *navg)
+void apply_force( particle_t &particle, particle_t &neighbor)
 {
 
     double dx = neighbor.x - particle.x;
@@ -105,13 +105,6 @@ void apply_force( particle_t &particle, particle_t &neighbor , double *dmin, dou
     if( r2 > cutoff2 )
         return;
 
-	if (r2 != 0) {
-	   if (r2/(cutoff2) < *dmin * (*dmin))
-	      *dmin = sqrt(r2)/cutoff;
-           
-	       (*davg) += sqrt(r2)/cutoff;
-           (*navg) ++;
-    }
 		
 	//printf("%f\n",min_r);
 	
@@ -216,7 +209,7 @@ void binning(particle_t* _particles, pbin_t* _bins, int _num) {
 	}
 }
 
-void apply_force_bin(particle_t* _particles, pbin_t* _bins, int _binId,  double *dmin, double *davg, int *navg) {
+void apply_force_bin(particle_t* _particles, pbin_t* _bins, int _binId) {
 	pbin_t* bin = _bins+_binId;
 
 	FOR (i, bin->num) {
@@ -226,10 +219,43 @@ void apply_force_bin(particle_t* _particles, pbin_t* _bins, int _binId,  double 
 			if (newId >= 0 && newId < numBins) {
 				pbin_t* new_bin = _bins + newId; 
 				for(int j = 0; j < new_bin->num; j++)
-					apply_force(_particles[bin->ids[i]], _particles[new_bin->ids[j]], dmin, davg, navg);
+					apply_force(_particles[bin->ids[i]], _particles[new_bin->ids[j]]);
 			}
 		}
 	}
 }
+
+void get_statistics( particle_t &particle, particle_t &neighbor , double *dmin, double *davg, int *navg ) {
+	double dx = neighbor.x - particle.x;
+	double dy = neighbor.y - particle.y;
+	double r2 = dx * dx + dy * dy;
+	if( r2 > cutoff2 )
+		return;
+
+	if (r2 != 0) {
+		if (r2/(cutoff2) < *dmin * (*dmin))
+			*dmin = sqrt(r2)/cutoff;
+
+		(*davg) += sqrt(r2)/cutoff;
+		(*navg) ++;
+	}
+}
+
+void get_statistics_bin( particle_t* _particles, pbin_t* _bins, int _binId, double *dmin, double *davg, int *navg ) {
+	pbin_t* bin = _bins+_binId;
+
+	FOR (i, bin->num) {
+		FOR (k, 9) {
+			int newId = _binId + shift[k];
+			//int newId = _binId + dx * binSize +dy;
+			if (newId >= 0 && newId < numBins) {
+				pbin_t* new_bin = _bins + newId; 
+				for(int j = 0; j < new_bin->num; j++)
+					get_statistics(_particles[bin->ids[i]], _particles[new_bin->ids[j]], dmin, davg, navg);
+			}
+		}
+	}
+}
+
 
 
