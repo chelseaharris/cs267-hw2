@@ -6,6 +6,7 @@
 #include <math.h>
 #include <time.h>
 #include <sys/time.h>
+#include <vector>
 #include "common.h"
 
 double size;
@@ -93,9 +94,51 @@ void init_particles( int n, particle_t *p )
 }
 
 //
+// Binning functions
+//
+
+// function to bin particles (square bins)
+bins_t bin_particles( particle_t* particles, const int n ) 
+{
+  double bin_wid = get_cutoff(); // ideal bin width
+  double grid_size = get_size();
+  int num_bins_side = floor( grid_size/bin_wid ); // number of bins in one direction (some grid unbinned)
+  bin_wid = grid_size/num_bins_side; // adjust bin width so that bins fill the grid
+  int num_bins = num_bins_side*num_bins_side; // total number of bins
+
+  /* //for testing the binning:
+  printf("Grid size: %e\n",grid_size);
+  printf("Cutoff: %e\n",get_cutoff());
+  printf("Bin width: %e\n",bin_wid);
+  */
+
+  BinnedParticles binned_particles(num_bins);
+
+  // bin the particles
+  particle_t* end_ptr = particles + n;
+  particle_t* p_ptr = particles;
+  do {
+    int bin_x = (int)floor( (*p_ptr).x / bin_wid ); // bin number in x direction
+    int bin_y = (int)floor( (*p_ptr).y / bin_wid ); // bin number in y direction
+    int bin_i = num_bins_side*bin_y + bin_x; //linear bin index;
+    binned_particles[bin_i].push_back(p_ptr) ; 
+    p_ptr++;
+  } while (p_ptr != end_ptr);
+
+  // put all necessary information into a binned_t structure to return
+  bins_t particle_bins;
+  particle_bins.num_bins = num_bins;
+  particle_bins.bin_wid = bin_wid;
+  particle_bins.binned_parts = binned_particles;
+
+  return particle_bins;
+}
+
+
+//
 //  interact two particles
 //
-void apply_force( particle_t &particle, particle_t &neighbor , double *dmin, double *davg, int *navg)
+void apply_force( particle_t &particle, particle_t &neighbor )//, double *dmin, double *davg, int *navg)
 {
 
     double dx = neighbor.x - particle.x;
@@ -103,25 +146,48 @@ void apply_force( particle_t &particle, particle_t &neighbor , double *dmin, dou
     double r2 = dx * dx + dy * dy;
     if( r2 > cutoff*cutoff )
         return;
-	if (r2 != 0)
+    /* 
+     * Move this part to get_stats()
+    if (r2 != 0)
         {
 	   if (r2/(cutoff*cutoff) < *dmin * (*dmin))
 	      *dmin = sqrt(r2)/cutoff;
            (*davg) += sqrt(r2)/cutoff;
            (*navg) ++;
         }
+    */
 		
     r2 = fmax( r2, min_r*min_r );
     double r = sqrt( r2 );
- 
-    
-	
+ 	
     //
     //  very simple short-range repulsive force
     //
     double coef = ( 1 - cutoff / r ) / r2 / mass;
     particle.ax += coef * dx;
     particle.ay += coef * dy;
+}
+
+
+/*void apply_force_in_bin( bins_t &part_bins )
+{
+    
+}*/
+
+// separate out the part that gets statistics, since these are not always wanted
+void get_stats( particle_t &particle, particle_t &neighbor, double *dmin, double *davg, int *navg )
+{
+  double dx = neighbor.x - particle.x;
+  double dy = neighbor.y - particle.y;
+  double r  = sqrt( dx*dx + dy*dy );
+  double frac_r = r/cutoff;
+  if (r!=0)
+    {
+      if (frac_r < *dmin) 
+	*dmin = frac_r;
+      (*davg) += frac_r;
+      (*navg) ++;
+    }
 }
 
 //
@@ -152,6 +218,8 @@ void move( particle_t &p )
         p.vy = -p.vy;
     }
 }
+
+
 
 //
 //  I/O routines
@@ -194,3 +262,5 @@ char *read_string( int argc, char **argv, const char *option, char *default_valu
         return argv[iplace+1];
     return default_value;
 }
+
+

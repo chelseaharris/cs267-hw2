@@ -1,6 +1,8 @@
 #ifndef __CS267_COMMON_H__
 #define __CS267_COMMON_H__
 
+#include <vector>
+
 inline int min( int a, int b ) { return a < b ? a : b; }
 inline int max( int a, int b ) { return a > b ? a : b; }
 
@@ -24,6 +26,23 @@ typedef struct
 } particle_t;
 
 //
+// binned particle data structures
+//
+typedef std::vector< std::vector< particle_t* > > BinnedParticles;
+
+typedef struct
+{
+  BinnedParticles binned_parts; // all the bins and their particles
+  int num_bins; // total number of bins. bins per side is sqrt this
+  double bin_wid; //physical bin width
+} bins_t;
+
+//
+// binning routine
+// 
+bins_t bin_particles( particle_t* particles, const int n );
+
+//
 //  timing routines
 //
 double read_timer( );
@@ -33,8 +52,10 @@ double read_timer( );
 //
 void set_size( int n );
 void init_particles( int n, particle_t *p );
-void apply_force( particle_t &particle, particle_t &neighbor , double *dmin, double *davg, int *navg);
+void apply_force( particle_t &particle, particle_t &neighbor );//, double *dmin, double *davg, int *navg);
 void move( particle_t &p );
+
+void get_stats( particle_t &particle, particle_t &neighbor, double *dmin, double *davg, int *navg);
 
 //
 // variable retrieval functions

@@ -6,53 +6,6 @@
 #include "common.h"
 
 
-// structure for storing the binned particles
-typedef std::vector< std::vector< particle_t* > > BinnedParticles;
-typedef struct
-{
-  BinnedParticles binned_parts;
-  int num_bins;
-  double bin_wid;
-} binned_t;
-
-// function to bin particles
-// assumes square bins
-binned_t bin_particles( particle_t* particles, const int n ) 
-{
-  double bin_wid = 2*get_cutoff(); // ideal bin width
-
-  double grid_size = get_size();
-  int num_bins_side = floor( grid_size/bin_wid ); // number of bins in one direction
-  bin_wid = grid_size/num_bins_side; // adjust to avoid having bin where there is no grid
-  int num_bins = num_bins_side*num_bins_side; // total number of bins
-
-  /* //for testing the binning:
-  printf("Grid size: %e\n",grid_size);
-  printf("Cutoff: %e\n",get_cutoff());
-  printf("Bin width: %e\n",bin_wid);
-  */
-
-  BinnedParticles binned_particles(num_bins);
-
-  // bin the particles
-  particle_t* end_ptr = particles + n;
-  particle_t* p_ptr = particles;
-  do {
-    int bin_x = (int)floor( (*p_ptr).x / bin_wid ); // bin number in x direction
-    int bin_y = (int)floor( (*p_ptr).y / bin_wid ); // bin number in y direction
-    int bin_i = num_bins_side*bin_x + bin_y; //linear bin index;
-    binned_particles[bin_i].push_back(p_ptr) ; 
-    p_ptr++;
-  } while (p_ptr != end_ptr);
-
-  // put all necessary information into a binned_t structure to return
-  binned_t particle_bins;
-  particle_bins.num_bins = num_bins;
-  particle_bins.bin_wid = bin_wid;
-  particle_bins.binned_parts = binned_particles;
-
-  return particle_bins;
-}
 
 //
 //  benchmarking program
@@ -88,7 +41,7 @@ int main( int argc, char **argv )
     set_size( n );
     init_particles( n, particles );
 
-
+    int no_status = find_option( argc, argv, "-no" );
     /*
     //
     // Check correctness of the binning function 
@@ -130,8 +83,12 @@ int main( int argc, char **argv )
         for( int i = 0; i < n; i++ )
         {
             particles[i].ax = particles[i].ay = 0;
-            for (int j = 0; j < n; j++ )
-				apply_force( particles[i], particles[j],&dmin,&davg,&navg);
+            for (int j = 0; j < n; j++ ) 
+	    {
+		apply_force( particles[i], particles[j] );//,&dmin,&davg,&navg);
+                if( no_status == -1 )
+                    get_stats( particles[i], particles[j], &dmin, &davg, &navg );
+	    }
         }
  
         //
@@ -140,7 +97,7 @@ int main( int argc, char **argv )
         for( int i = 0; i < n; i++ ) 
             move( particles[i] );		
 
-        if( find_option( argc, argv, "-no" ) == -1 )
+        if( no_status == -1 )
         {
           //
           // Computing statistical data
@@ -162,19 +119,19 @@ int main( int argc, char **argv )
     
     printf( "n = %d, simulation time = %g seconds", n, simulation_time);
 
-    if( find_option( argc, argv, "-no" ) == -1 )
+    if( no_status == -1 )
     {
       if (nabsavg) absavg /= nabsavg;
-    // 
-    //  -the minimum distance absmin between 2 particles during the run of the simulation
-    //  -A Correct simulation will have particles stay at greater than 0.4 (of cutoff) with typical values between .7-.8
-    //  -A simulation were particles don't interact correctly will be less than 0.4 (of cutoff) with typical values between .01-.05
-    //
-    //  -The average distance absavg is ~.95 when most particles are interacting correctly and ~.66 when no particles are interacting
-    //
-    printf( ", absmin = %lf, absavg = %lf", absmin, absavg);
-    if (absmin < 0.4) printf ("\nThe minimum distance is below 0.4 meaning that some particle is not interacting");
-    if (absavg < 0.8) printf ("\nThe average distance is below 0.8 meaning that most particles are not interacting");
+      // 
+      //  -the minimum distance absmin between 2 particles during the run of the simulation
+      //  -A Correct simulation will have particles stay at greater than 0.4 (of cutoff) with typical values between .7-.8
+      //  -A simulation were particles don't interact correctly will be less than 0.4 (of cutoff) with typical values between .01-.05
+      //
+      //  -The average distance absavg is ~.95 when most particles are interacting correctly and ~.66 when no particles are interacting
+      //
+      printf( ", absmin = %lf, absavg = %lf", absmin, absavg);
+      if (absmin < 0.4) printf ("\nThe minimum distance is below 0.4 meaning that some particle is not interacting");
+      if (absavg < 0.8) printf ("\nThe average distance is below 0.8 meaning that most particles are not interacting");
     }
     printf("\n");     
 
