@@ -152,6 +152,23 @@ bins_t bin_particles( particle_t* particles, const int n )
 //
 //  interact two particles
 //
+
+// separate out the part that gets statistics, since these are not always wanted
+void get_stats( particle_t &particle, particle_t &neighbor, double *dmin, double *davg, int *navg )
+{
+  double dx = neighbor.x - particle.x;
+  double dy = neighbor.y - particle.y;
+  double r  = sqrt( dx*dx + dy*dy );
+  double frac_r = r/cutoff;
+  if (r!=0)
+    {
+      if (frac_r < *dmin) 
+	*dmin = frac_r;
+      (*davg) += frac_r;
+      (*navg) ++;
+    }
+}
+
 void apply_force( particle_t &particle, particle_t &neighbor )//, double *dmin, double *davg, int *navg)
 {
 
@@ -181,6 +198,14 @@ void apply_force( particle_t &particle, particle_t &neighbor )//, double *dmin, 
     particle.ax += coef * dx;
     particle.ay += coef * dy;
 }
+
+// apply force and do stats
+void apply_force( particle_t &particle, particle_t &neighbor, double *dmin, double *davg, int *navg)
+{
+  apply_force( particle, neighbor );
+  get_stats( particle, neighbor, dmin, davg, navg );
+}
+
 
 // apply force to the particles in a bin; only look at 
 // adjacent bins
@@ -219,21 +244,41 @@ void apply_force_in_bin( bins_t &part_bins, int i_bin )
     }
 }
 
-// separate out the part that gets statistics, since these are not always wanted
-void get_stats( particle_t &particle, particle_t &neighbor, double *dmin, double *davg, int *navg )
+void apply_force_in_bin( bins_t &part_bins, int i_bin, double *dmin, double *davg, int *navg )
 {
-  double dx = neighbor.x - particle.x;
-  double dy = neighbor.y - particle.y;
-  double r  = sqrt( dx*dx + dy*dy );
-  double frac_r = r/cutoff;
-  if (r!=0)
+    int n_side = (int) sqrt(part_bins.num_bins);
+    /* for each particle in this bin
+     *    for each bin in shift list
+     *        for each particle in the bin 
+     *            if shift==0, check that it isn't the same particle
+     *            apply force between particles
+     */
+    std::vector< particle_t* > this_bin = part_bins.binned_parts[i_bin];
+    for ( int i_p=0; i_p<this_bin.size(); i_p++ )
     {
-      if (frac_r < *dmin) 
-	*dmin = frac_r;
-      (*davg) += frac_r;
-      (*navg) ++;
+      for ( int i=0; i<9; i++ )
+      {
+	  int i_neighbor = i_bin + part_bins.shiftlist[i];
+
+          // make sure you're in the grid 
+          if ( (i_neighbor!=i_bin) && 
+	       (( i_neighbor >= part_bins.num_bins) || // off top edge
+	        ( i_neighbor < 0 )                  || // off bottom edge
+  	        ( (i_neighbor + 1)%n_side == 0 )    || // off left edge
+                ( i_neighbor%n_side == 0 ))            // off right edge
+	     )
+		continue;
+
+          std::vector< particle_t* > adj_bin = part_bins.binned_parts[i_neighbor];
+          for ( int i_n=0; i_n<adj_bin.size(); i_n++ )
+	  {
+	    //if ( (i_bin == i_neighbor) && (n_ptr==p_ptr)) continue; // ensure two different particles
+	    apply_force( *(this_bin[i_p]), *(adj_bin[i_n]), dmin, davg, navg ); // apply force on particle from neighbor
+	  } 
+      }
     }
 }
+
 
 //
 //  integrate the ODE

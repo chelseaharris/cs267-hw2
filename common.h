@@ -55,6 +55,9 @@ double read_timer( );
 void set_size( int n );
 void init_particles( int n, particle_t *p );
 void apply_force( particle_t &particle, particle_t &neighbor );//, double *dmin, double *davg, int *navg);
+void apply_force( particle_t &particle, particle_t &neighbor, double *dmin, double *davg, int *navg);
+void apply_force_in_bin( bins_t &part_bins, int i_bin );
+void apply_force_in_bin( bins_t &part_bins, int i_bin, double *dmin, double *davg, int *navg );
 void move( particle_t &p );
 
 void get_stats( particle_t &particle, particle_t &neighbor, double *dmin, double *davg, int *navg);
