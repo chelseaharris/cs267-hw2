@@ -103,7 +103,7 @@ bins_t bin_particles( particle_t* particles, const int n )
 
   bins_t particle_bins;
 
-  double bin_wid = get_cutoff(); // ideal bin width
+  double bin_wid = 2*get_cutoff(); // ideal bin width
   double grid_size = get_size();
   int num_bins_side = floor( grid_size/bin_wid ); // number of bins in one direction (some grid unbinned)
   bin_wid = grid_size/num_bins_side; // adjust bin width so that bins fill the grid
