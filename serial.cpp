@@ -77,18 +77,19 @@ int main( int argc, char **argv )
 	navg = 0;
         davg = 0.0;
 	dmin = 1.0;
+
+        //
+        // bin the particles
+        //
+        bins_t bins = bin_particles( particles, n );
+
         //
         //  compute forces
         //
-        for( int i = 0; i < n; i++ )
+        for( int i_bin = 0; i_bin < bins.num_bins; i_bin++ )
         {
-            particles[i].ax = particles[i].ay = 0;
-            for (int j = 0; j < n; j++ ) 
-	    {
-		apply_force( particles[i], particles[j] );//,&dmin,&davg,&navg);
-                if( no_status == -1 )
-                    get_stats( particles[i], particles[j], &dmin, &davg, &navg );
-	    }
+  	    if ( no_status == -1 ) apply_force_in_bin( bins, i_bin, &dmin, &davg, &navg );
+            else                   apply_force_in_bin( bins, i_bin );
         }
  
         //
