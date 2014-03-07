@@ -139,7 +139,7 @@ bins_t bin_particles( particle_t* particles, const int n )
     int bin_x = (int)floor( (*p_ptr).x / bin_wid ); // bin number in x direction
     int bin_y = (int)floor( (*p_ptr).y / bin_wid ); // bin number in y direction
     int bin_i = num_bins_side*bin_y + bin_x; //linear bin index;
-    binned_particles[bin_i].push_back(p_ptr) ; 
+    binned_particles[bin_i].push_back(*p_ptr) ; 
     p_ptr++;
   } while (p_ptr != end_ptr);
 
@@ -186,12 +186,12 @@ void apply_force( particle_t &particle, particle_t &neighbor, double *dmin, doub
         return;
 
     if (r2 != 0)
-        {
-	   if (r2/(cutoff*cutoff) < *dmin * (*dmin))
-	      *dmin = sqrt(r2)/cutoff;
-           (*davg) += sqrt(r2)/cutoff;
-           (*navg) ++;
-        }
+    {
+        if (r2/(cutoff*cutoff) < *dmin * (*dmin))
+	    *dmin = sqrt(r2)/cutoff;
+       (*davg) += sqrt(r2)/cutoff;
+       (*navg) ++;
+    }
 		
     r2 = fmax( r2, min_r*min_r );
     double r = sqrt( r2 );
@@ -216,11 +216,11 @@ void apply_force_in_bin( bins_t &part_bins, int i_bin )
      *            if shift==0, check that it isn't the same particle
      *            apply force between particles
      */
-    std::vector< particle_t* > this_bin = part_bins.binned_parts[i_bin];
+    std::vector< particle_t > this_bin = part_bins.binned_parts[i_bin];
     for ( int i_p=0; i_p<this_bin.size(); i_p++ )
     {
       // initialize this particle's acceleration to 0
-      (this_bin[i_p])->ax = (this_bin[i_p])->ay = 0.;
+      (this_bin[i_p]).ax = (this_bin[i_p]).ay = 0.;
 
       for ( int i=0; i<9; i++ )
       {
@@ -235,11 +235,11 @@ void apply_force_in_bin( bins_t &part_bins, int i_bin )
 	     )
 		continue;
 
-          std::vector< particle_t* > adj_bin = part_bins.binned_parts[i_neighbor];
+          std::vector< particle_t > adj_bin = part_bins.binned_parts[i_neighbor];
           for ( int i_n=0; i_n<adj_bin.size(); i_n++ )
 	  {
 	    //if ( (i_bin == i_neighbor) && (n_ptr==p_ptr)) continue; // ensure two different particles
-	    apply_force( *(this_bin[i_p]), *(adj_bin[i_n]) ); // apply force on particle from neighbor
+	    apply_force( this_bin[i_p], adj_bin[i_n] ); // apply force on particle from neighbor
 	  } 
       }
     }
@@ -255,7 +255,7 @@ void apply_force_in_bin( bins_t &part_bins, int i_bin, double *dmin, double *dav
      *            if shift==0, check that it isn't the same particle
      *            apply force between particles
      */
-    std::vector< particle_t* > this_bin = part_bins.binned_parts[i_bin];
+    std::vector< particle_t > this_bin = part_bins.binned_parts[i_bin];
     for ( int i_p=0; i_p<this_bin.size(); i_p++ )
     {
       for ( int i=0; i<9; i++ )
@@ -271,11 +271,11 @@ void apply_force_in_bin( bins_t &part_bins, int i_bin, double *dmin, double *dav
 	     )
 		continue;
 
-          std::vector< particle_t* > adj_bin = part_bins.binned_parts[i_neighbor];
+          std::vector< particle_t > adj_bin = part_bins.binned_parts[i_neighbor];
           for ( int i_n=0; i_n<adj_bin.size(); i_n++ )
 	  {
 	    //if ( (i_bin == i_neighbor) && (n_ptr==p_ptr)) continue; // ensure two different particles
-	    apply_force( *(this_bin[i_p]), *(adj_bin[i_n]), dmin, davg, navg ); // apply force on particle from neighbor
+	    apply_force( this_bin[i_p], adj_bin[i_n], dmin, davg, navg ); // apply force on particle from neighbor
 	  } 
       }
     }

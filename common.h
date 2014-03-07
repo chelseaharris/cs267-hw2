@@ -29,7 +29,7 @@ typedef struct
 //
 // binned particle data structures
 //
-typedef std::vector< std::vector< particle_t* > > BinnedParticles;
+typedef std::vector< std::vector< particle_t > > BinnedParticles;
 
 typedef struct
 {
@@ -42,7 +42,7 @@ typedef struct
 //
 // binning routine
 // 
-bins_t bin_particles( particle_t* particles, const int n );
+bins_t bin_particles( particle_t &particles, const int n );
 
 //
 //  timing routines
