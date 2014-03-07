@@ -38,25 +38,27 @@ int main( int argc, char **argv ) {
 	
     set_size( n );
 
-	pbin_t* bins = (pbin_t*) malloc(numBins * sizeof(pbin_t));
+	bin_t* bins = (bin_t*) malloc(numBins * sizeof(bin_t));
 
 	FOR (i, numBins)
-		bins[i].ids = (int*) malloc(n*sizeof(int));
-
+		bins[i].particle_ids = (int*) malloc(n*sizeof(int));
+	init_bins(bins);
 
     init_particles( n, particles );
+	for (int i = 0; i < n; i++)
+		move_and_update(particles[i], i);
     binning(particles, bins, n);
     //
     //  simulate a number of time steps
     //
     double simulation_time = read_timer();
 	
-	FOR (step, NSTEPS) {
+		FOR (step, NSTEPS) {
 		FOR (i, n) {
 			particles[i].ax = 0; 
 			particles[i].ay = 0;
 		}
- 
+		//#pragma omp for
 		FOR (i, numBins)
 			apply_force_bin(particles, bins, i);
 
@@ -71,8 +73,9 @@ int main( int argc, char **argv ) {
         //
         //  move particles
         //
-        for( int i = 0; i < n; i++ ) 
-            move( particles[i] );		
+		//#pragma omp for
+        FOR (i, n) 
+            move_and_update( particles[i], i);		
 		
 		binning(particles, bins, n);
 

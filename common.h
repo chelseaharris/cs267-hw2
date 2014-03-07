@@ -24,11 +24,11 @@ typedef struct
 } particle_t;
 
 typedef struct{
-	int row;
-	int col;
-	int num;
-	int* ids;
-} pbin_t;
+	int num_particles;
+	int num_neigh; 
+	int* neighbors_ids; 
+	int* particle_ids;
+} bin_t;
 
 
 
@@ -45,8 +45,18 @@ void set_size( int n );
 void init_particles( int n, particle_t *p );
 void apply_force( particle_t &particle, particle_t &neighbor);
 void move( particle_t &p );
-// added functions
 
+
+// added functions
+void move_and_update( particle_t &p, int _id);
+void init_bins(bin_t* _bins);
+void binning(particle_t* _particles, bin_t* _bins, int _num);
+void apply_force_bin(particle_t* _particles,  bin_t* _bins, int _binId);
+//void apply_force_bin_openmp(particle_t* _particles,  bin_t* _bins, int _binId);
+//void apply_force_bin_batch(particle_t* _particles,  bin_t* _bins, int _binId, int _batchSize, int _num);
+void get_statistics( particle_t &particle, particle_t &neighbor , double *dmin, double *davg, int *navg);
+void get_statistics_bin(particle_t* _particles,  bin_t* _bins, int _binId, double *dmin, double *davg, int *navg);
+//void move_and_binning( particle_t &p);
 
 
 //
@@ -56,11 +66,6 @@ FILE *open_save( char *filename, int n );
 void save( FILE *f, int n, particle_t *p );
 
 
-// added functions
-void binning(particle_t* _particles, pbin_t* _bins, int _num);
-void apply_force_bin(particle_t* _particles,  pbin_t* _bins, int _binId);
-void get_statistics_bin(particle_t* _particles,  pbin_t* _bins, int _binId, double *dmin, double *davg, int *navg);
-void get_statistics( particle_t &particle, particle_t &neighbor , double *dmin, double *davg, int *navg);
 
 
 //
