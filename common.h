@@ -25,16 +25,16 @@ typedef struct
 	double vy;
 	double ax;
 	double ay;
-	int id; 
+	int id;       // particle id
 } particle_t;
 
 
 
 struct bin_t {
-	int num_particles;
-	int num_neigh; 
-	bin_t** neighbors_ids; 
-	particle_t** particle_ids;
+	int num_particles;   // #particles
+	int num_neigh;       // #neighbour bins 
+	bin_t** neighbors_ids;  //#neighbours
+	particle_t** particle_ids; //#particles 
 };
 
 

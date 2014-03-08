@@ -26,7 +26,7 @@ int main( int argc, char **argv ) {
     }
     
 	bool isCheck = (find_option( argc, argv, "-no" ) == -1);
-    int n = read_int( argc, argv, "-n", 1000 );
+    int n = read_int( argc, argv, "-n", 1000 );  //#particles 
 
     char *savename = read_string( argc, argv, "-o", NULL );
     char *sumname = read_string( argc, argv, "-s", NULL );
@@ -36,14 +36,11 @@ int main( int argc, char **argv ) {
 
     particle_t *particles = (particle_t*) malloc( n * sizeof(particle_t) );
 	
-	set_size(n);
-	bin_t* bins = (bin_t*) malloc(numBins * sizeof(bin_t));
-	init_bins(bins);
-    init_particles(n, particles );
-	
-	for (int i = 0; i < n; i++)
-		move_and_update(particles[i]);
-
+	set_size(n);    // initialize 
+	bin_t* bins = (bin_t*) malloc(numBins * sizeof(bin_t)); // allocate memory for bins
+	init_bins(bins);   // initialize bins
+    init_particles(n, particles ); // initialize particles 
+	// binning
 	binning(particles, bins, n);
     //
     //  simulate a number of time steps
@@ -53,13 +50,13 @@ int main( int argc, char **argv ) {
     double simulation_time = read_timer();
 	FOR (step, NSTEPS) {
 		//#pragma omp parallel for 
-		FOR (i, n) {
+		FOR (i, n) {      // clear a
 			particles[i].ax = 0; 
 			particles[i].ay = 0;
 		}
 	
 		//#pragma omp parallel for 
-		FOR (i, numthreads)
+		FOR (i, numthreads)  
 			apply_force_bin_batch(particles, bins, i, batchSz, numBins);
 
 		if (isCheck) {

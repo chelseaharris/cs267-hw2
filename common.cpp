@@ -89,6 +89,8 @@ void init_particles( int n, particle_t *p )
 		p[i].ax = 0; 
 		p[i].ay = 0;
 		p[i].id = i;
+		globalIds[p[i].id] = (int)(floor(p[i].x / cutoff) * binSize 
+		+ floor(p[i].y / cutoff));  // initialize globalIds
     }
     free( shuffle );
 }
@@ -178,14 +180,9 @@ void move_and_update( particle_t &p)
 
 	p.ax = 0; 
 	p.ay = 0;
-	//int id = ;
+	// I update globalIds here
 	globalIds[p.id] = (int)(floor(p.x / cutoff) * binSize 
 		+ floor(p.y / cutoff));
-	//if (globalIds[p.id] < 0 || globalIds[p.id] >= numBins) {
-		//printf("id = %d, bin id = %d x = %f, y = %f\n", p.id, globalIds[p.id], p.x, p.y);
-		//exit(-1);
-	//}
-	
 }
 
 
@@ -232,38 +229,41 @@ char *read_string( int argc, char **argv, const char *option, char *default_valu
 }
 
 
-void binning(particle_t* _particles, bin_t* _bins, int _num) {
+void binning(particle_t* _particles, bin_t* _bins, int _num) 
+	// globalNums: globalNums[i] is #particles of the i-th bin 
+	// globalIds: globalIds[i] is the bin id of the i-th particles 
+	
+	// initialize 
 	#pragma omp parallel for 
 	FOR (i, numBins) {
 		_bins[i].num_particles = 0;
 		globalNums[i] = 0; 
 	}
 	
-	
+	// we update globalIds in move_and_update function
+	// here, we update globalNums based on globalIds
 	FOR (i, _num)
 		globalNums[globalIds[i]]++;
 
+	// once we know #particles in each bin, we can dynamically allocate memory
 	#pragma omp parallel for 
 	FOR (i, numBins) {
-		/*if (_bins[i].particle_ids)
-			free(_bins[i].particle_ids);*/
 		if (globalNums[i] > 0)
 			_bins[i].particle_ids = (particle_t**)malloc(globalNums[i] * sizeof(particle_t*));
 	}
+	
+	// we update particles_ids and num_particles 
 	#pragma omp parallel for 
 	FOR (i, _num) {
 		int id = globalIds[i];
 		_bins[id].particle_ids[_bins[id].num_particles] = _particles+i;
 		_bins[id].num_particles++;
 	}
-
 }
 
 
 
 void apply_force_bin(particle_t* _particles, bin_t& _bin, int _binId) {
-	//bin_t* bin = _bins + _binId;
-
 	FOR (i, _bin.num_particles) {
 		particle_t& p = *_bin.particle_ids[i];
 		FOR (k, _bin.num_neigh) {
@@ -302,6 +302,9 @@ void get_statistics_bin( particle_t* _particles, bin_t& _bin, int _binId, double
 	}
 }
 
+// pre-compute neighbour index of each bin
+// for one bin, its neighbour bins remain the same 
+// throughout the algorithm. We pre-compute it for efficiency
 void init_bins( bin_t* _bins ) {
 	int dx[] = {-1, -1, -1, 0, 0, 0, 1, 1, 1};
 	int dy[] = {-1, 0, 1, -1, 0, 1, -1, 0, 1};
