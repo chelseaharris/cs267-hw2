@@ -3,7 +3,7 @@
 #include <assert.h>
 #include <math.h>
 #include "common.h"
-
+#include "omp.h"
 extern int numBins; 
 //
 //  benchmarking program
@@ -11,7 +11,7 @@ extern int numBins;
 int main( int argc, char **argv ) {    
 	int navg,nabsavg=0;
     double davg,dmin, absmin=1.0, absavg=0.0;
-	
+	int numthreads = 1; 
     //
     // argument parsing
     // 
@@ -36,31 +36,31 @@ int main( int argc, char **argv ) {
 
     particle_t *particles = (particle_t*) malloc( n * sizeof(particle_t) );
 	
-    set_size( n );
-
+	set_size(n);
 	bin_t* bins = (bin_t*) malloc(numBins * sizeof(bin_t));
-
-	FOR (i, numBins)
-		bins[i].particle_ids = (int*) malloc(n*sizeof(int));
 	init_bins(bins);
-
-    init_particles( n, particles );
+    init_particles(n, particles );
+	
 	for (int i = 0; i < n; i++)
-		move_and_update(particles[i], i);
-    binning(particles, bins, n);
+		move_and_update(particles[i]);
+
+	binning(particles, bins, n);
     //
     //  simulate a number of time steps
     //
+	int batchSz = ceil(numBins / (float)numthreads);
+	int batchSzParticles = ceil(n / (float)numthreads);
     double simulation_time = read_timer();
-	
-		FOR (step, NSTEPS) {
+	FOR (step, NSTEPS) {
+		//#pragma omp parallel for 
 		FOR (i, n) {
 			particles[i].ax = 0; 
 			particles[i].ay = 0;
 		}
-		//#pragma omp for
-		FOR (i, numBins)
-			apply_force_bin(particles, bins, i);
+	
+		//#pragma omp parallel for 
+		FOR (i, numthreads)
+			apply_force_bin_batch(particles, bins, i, batchSz, numBins);
 
 		if (isCheck) {
 			navg = 0;
@@ -68,15 +68,13 @@ int main( int argc, char **argv ) {
 			dmin = 1.0;
 
 			FOR (i, numBins)
-				get_statistics_bin(particles, bins, i, &dmin, &davg, &navg);
+				get_statistics_bin(particles, bins[i], i, &dmin, &davg, &navg);
 		}
-        //
-        //  move particles
-        //
-		//#pragma omp for
-        FOR (i, n) 
-            move_and_update( particles[i], i);		
-		
+    
+		//#pragma omp parallel for 
+		FOR (i, numthreads)
+			move_and_update_batch(particles, i, batchSzParticles, n);
+
 		binning(particles, bins, n);
 
         if (isCheck)
@@ -99,6 +97,7 @@ int main( int argc, char **argv ) {
               save( fsave, n, particles );
         }
     }
+
 	
 	simulation_time = read_timer( ) - simulation_time;
 
@@ -140,7 +139,7 @@ int main( int argc, char **argv ) {
     free( particles );
     if( fsave )
         fclose( fsave );
-    
+    free(bins);
     return 0;
 
 }

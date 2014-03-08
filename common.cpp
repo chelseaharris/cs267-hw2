@@ -11,9 +11,8 @@
 double size;
 int binSize; 
 int numBins; 
-int shift[9];
 int* globalIds; 
-
+int* globalNums; 
 //
 //  tuned constants
 //
@@ -45,15 +44,12 @@ double read_timer( )
 //
 //  keep density constant
 //
-void set_size( int n )
-{
-    size = sqrt( density * n );
+void set_size( int n ) {
+	size = sqrt( density * n );
 	binSize = (int)ceil(size / cutoff);
 	numBins = binSize * binSize; 
-	shift[0] = -binSize-1; shift[1] = -binSize; shift[2] = -binSize+1;
-	shift[3] = -1; shift[4] = 0; shift[5] = 1; 
-	shift[6] = binSize-1; shift[7] = binSize; shift[8] = binSize+1;
 	globalIds =  (int*) malloc(n * sizeof(int));
+	globalNums = (int*)malloc(numBins * sizeof(int));
 }
 
 //
@@ -84,12 +80,15 @@ void init_particles( int n, particle_t *p )
         //
         p[i].x = size*(1.+(k%sx))/(1+sx);
         p[i].y = size*(1.+(k/sx))/(1+sy);
-
+		
         //
         //  assign random velocities within a bound
         //
         p[i].vx = drand48()*2-1;
         p[i].vy = drand48()*2-1;
+		p[i].ax = 0; 
+		p[i].ay = 0;
+		p[i].id = i;
     }
     free( shuffle );
 }
@@ -151,12 +150,13 @@ void move( particle_t &p )
 }
 
 
-void move_and_update( particle_t &p, int _id)
+void move_and_update( particle_t &p)
 {
 	//
 	//  slightly simplified Velocity Verlet integration
 	//  conserves energy better than explicit Euler method
 	//
+	//printf("x = %f, y = %f, vx = %f, vy = %f, ax = %f, ay = %f\n",  p.x, p.y, p.vx, p.vy, p.ax, p.ay);
 	p.vx += p.ax * dt;
 	p.vy += p.ay * dt;
 	p.x  += p.vx * dt;
@@ -179,8 +179,13 @@ void move_and_update( particle_t &p, int _id)
 	p.ax = 0; 
 	p.ay = 0;
 	//int id = ;
-	globalIds[_id] = (int)(floor(p.x / cutoff) * binSize 
+	globalIds[p.id] = (int)(floor(p.x / cutoff) * binSize 
 		+ floor(p.y / cutoff));
+	//if (globalIds[p.id] < 0 || globalIds[p.id] >= numBins) {
+		//printf("id = %d, bin id = %d x = %f, y = %f\n", p.id, globalIds[p.id], p.x, p.y);
+		//exit(-1);
+	//}
+	
 }
 
 
@@ -226,101 +231,50 @@ char *read_string( int argc, char **argv, const char *option, char *default_valu
     return default_value;
 }
 
-// _num: #particles 
-void binning(particle_t* _particles, bin_t* _bins, int _num) {
-	FOR (i, numBins)
-		_bins[i].num_particles = 0;
 
+void binning(particle_t* _particles, bin_t* _bins, int _num) {
+	#pragma omp parallel for 
+	FOR (i, numBins) {
+		_bins[i].num_particles = 0;
+		globalNums[i] = 0; 
+	}
+	
+	
+	FOR (i, _num)
+		globalNums[globalIds[i]]++;
+
+	#pragma omp parallel for 
+	FOR (i, numBins) {
+		/*if (_bins[i].particle_ids)
+			free(_bins[i].particle_ids);*/
+		if (globalNums[i] > 0)
+			_bins[i].particle_ids = (particle_t**)malloc(globalNums[i] * sizeof(particle_t*));
+	}
+	#pragma omp parallel for 
 	FOR (i, _num) {
 		int id = globalIds[i];
-		_bins[id].particle_ids[_bins[id].num_particles] = i;
+		_bins[id].particle_ids[_bins[id].num_particles] = _particles+i;
 		_bins[id].num_particles++;
 	}
+
 }
 
 
 
-void apply_force_bin(particle_t* _particles, bin_t* _bins, int _binId) {
-	bin_t* bin = _bins + _binId;
+void apply_force_bin(particle_t* _particles, bin_t& _bin, int _binId) {
+	//bin_t* bin = _bins + _binId;
 
-	FOR (i, bin->num_particles) {
-		FOR (k, bin->num_neigh) {
-			bin_t* new_bin = _bins + bin->neighbors_ids[k]; 
-				for(int j = 0; j < new_bin->num_particles; j++)
-					apply_force(_particles[bin->particle_ids[i]], _particles[new_bin->particle_ids[j]]);
+	FOR (i, _bin.num_particles) {
+		particle_t& p = *_bin.particle_ids[i];
+		FOR (k, _bin.num_neigh) {
+			bin_t* new_bin = _bin.neighbors_ids[k]; 
+			for(int j = 0; j < new_bin->num_particles; j++)
+				apply_force(p, *new_bin->particle_ids[j]);
 		}
+		//move_and_update(p);
 	}
 }
 
-//void apply_force_bin_openmp(particle_t* _particles, bin_t* _bins, int _binId) {
-//	bin_t* bin = _bins + _binId;
-//
-//
-//	FOR (i, bin->num_particles) {
-//		int newId = _binId -binSize-1;
-//		//int newId = _binId + dx * binSize +dy;
-//		if (newId >= 0 && newId < numBins) {
-//			bin_t* new_bin = _bins + newId; 
-//			for(int j = 0; j < new_bin->num_particles; j++)
-//				apply_force(_particles[bin->particle_ids[i]], _particles[new_bin->particle_ids[j]]);
-//		}
-//
-//		newId++;
-//		if (newId >= 0 && newId < numBins) {
-//			bin_t* new_bin = _bins + newId; 
-//			for(int j = 0; j < new_bin->num_particles; j++)
-//				apply_force(_particles[bin->particle_ids[i]], _particles[new_bin->particle_ids[j]]);
-//		}
-//
-//		newId++;
-//		if (newId >= 0 && newId < numBins) {
-//			bin_t* new_bin = _bins + newId; 
-//			for(int j = 0; j < new_bin->num_particles; j++)
-//				apply_force(_particles[bin->particle_ids[i]], _particles[new_bin->particle_ids[j]]);
-//		}
-//		newId = _binId -1;
-//		if (newId >= 0 && newId < numBins) {
-//			bin_t* new_bin = _bins + newId; 
-//			for(int j = 0; j < new_bin->num_particles; j++)
-//				apply_force(_particles[bin->particle_ids[i]], _particles[new_bin->particle_ids[j]]);
-//		}
-//
-//		newId++;
-//		if (newId >= 0 && newId < numBins) {
-//			bin_t* new_bin = _bins + newId; 
-//			for(int j = 0; j < new_bin->num_particles; j++)
-//				apply_force(_particles[bin->particle_ids[i]], _particles[new_bin->particle_ids[j]]);
-//		}
-//		newId++;
-//		if (newId >= 0 && newId < numBins) {
-//			bin_t* new_bin = _bins + newId; 
-//			for(int j = 0; j < new_bin->num_particles; j++)
-//				apply_force(_particles[bin->particle_ids[i]], _particles[new_bin->particle_ids[j]]);
-//		}
-//
-//		newId = _binId + binSize-1;
-//		if (newId >= 0 && newId < numBins) {
-//			bin_t* new_bin = _bins + newId; 
-//			for(int j = 0; j < new_bin->num_particles; j++)
-//				apply_force(_particles[bin->particle_ids[i]], _particles[new_bin->particle_ids[j]]);
-//		}
-//
-//		newId++;
-//		if (newId >= 0 && newId < numBins) {
-//			bin_t* new_bin = _bins + newId; 
-//			for(int j = 0; j < new_bin->num_particles; j++)
-//				apply_force(_particles[bin->particle_ids[i]], _particles[new_bin->particle_ids[j]]);
-//		}
-//		newId++;
-//		if (newId >= 0 && newId < numBins) {
-//			bin_t* new_bin = _bins + newId; 
-//			for(int j = 0; j < new_bin->num_particles; j++)
-//				apply_force(_particles[bin->particle_ids[i]], _particles[new_bin->particle_ids[j]]);
-//		}
-//
-//		move_openmp(_particles[bin->particle_ids[i]], bin->particle_ids[i]);
-//	}
-//}
 
 void get_statistics( particle_t &particle, particle_t &neighbor , double *dmin, double *davg, int *navg ) {
 	double dx = neighbor.x - particle.x;
@@ -338,35 +292,23 @@ void get_statistics( particle_t &particle, particle_t &neighbor , double *dmin, 
 	}
 }
 
-void get_statistics_bin( particle_t* _particles, bin_t* _bins, int _binId, double *dmin, double *davg, int *navg ) {
-	bin_t* bin = _bins+_binId;
-
-	FOR (i, bin->num_particles) {
-		FOR (k, 9) {
-			int newId = _binId + shift[k];
-			//int newId = _binId + dx * binSize +dy;
-			if (newId >= 0 && newId < numBins) {
-				bin_t* new_bin = _bins + newId; 
-				for(int j = 0; j < new_bin->num_particles; j++)
-					get_statistics(_particles[bin->particle_ids[i]], _particles[new_bin->particle_ids[j]], dmin, davg, navg);
-			}
+void get_statistics_bin( particle_t* _particles, bin_t& _bin, int _binId, double *dmin, double *davg, int *navg ) {
+	FOR (i, _bin.num_particles) {
+		FOR (k, _bin.num_neigh) {
+			bin_t* new_bin = _bin.neighbors_ids[k]; 
+			for(int j = 0; j < new_bin->num_particles; j++)
+				get_statistics(*_bin.particle_ids[i], *new_bin->particle_ids[j], dmin, davg, navg);
 		}
 	}
 }
-
-//void apply_force_bin_batch( particle_t* _particles, bin_t* _bins, int _binId, int _batchSize, int _num) {
-//	int start = _binId * _batchSize; 
-//	int end = min((_binId+1) * _batchSize, _num); 
-//	for (int i = start; i < end; i++ )
-//		apply_force_bin(_particles, _bins, i);
-//}
 
 void init_bins( bin_t* _bins ) {
 	int dx[] = {-1, -1, -1, 0, 0, 0, 1, 1, 1};
 	int dy[] = {-1, 0, 1, -1, 0, 1, -1, 0, 1};
 	FOR (i, numBins) {
+		_bins[i].particle_ids = 0; 
 		_bins[i].num_neigh = 0; 
-		_bins[i].neighbors_ids = (int*) malloc(9 * sizeof(int));
+		_bins[i].neighbors_ids = (bin_t**) malloc(9 * sizeof(bin_t*));
 		int x = i % binSize; 
 		int y = (i - x) / binSize; 
 		FOR (k, 9) {
@@ -374,7 +316,7 @@ void init_bins( bin_t* _bins ) {
 			int new_y = y + dy[k];
 			if (new_x >= 0 && new_y >= 0 && new_x < binSize && new_y < binSize) {
 				int new_id = new_x + new_y * binSize;				
-				_bins[i].neighbors_ids[_bins[i].num_neigh] = new_id; 
+				_bins[i].neighbors_ids[_bins[i].num_neigh] = _bins + new_id; 
 				_bins[i].num_neigh++;
 			}
 		}
@@ -384,4 +326,16 @@ void init_bins( bin_t* _bins ) {
 
 
 
+void apply_force_bin_batch( particle_t* _particles, bin_t* _bins, int _binId, int _batchSize, int _num) {
+	int start = _binId * _batchSize; 
+	int end = min((_binId+1) * _batchSize, _num); 
+	for (int i = start; i < end; i++ )
+		apply_force_bin(_particles, _bins[i], i);
+}
 
+void move_and_update_batch( particle_t* _particles, int _binId, int _batchSize, int _num ) {
+	int start = _binId * _batchSize; 
+	int end = min((_binId+1) * _batchSize, _num); 
+	for (int i = start; i < end; i++ )
+		move_and_update(_particles[i]);
+}
