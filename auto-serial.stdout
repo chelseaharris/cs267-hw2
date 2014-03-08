@@ -1,0 +1,36 @@
+Warning: no access to tty (Bad file descriptor).
+Thus no job control in this shell.
+n = 500, simulation time = 0.152785 seconds
+Application 26775156 resources: utime ~0s, stime ~0s, Rss ~16436, inblocks ~5483, outblocks ~14253
+n = 1000, simulation time = 0.311773 seconds
+Application 26775161 resources: utime ~0s, stime ~0s, Rss ~32260, inblocks ~5483, outblocks ~14253
+n = 2000, simulation time = 0.677462 seconds
+Application 26775164 resources: utime ~1s, stime ~0s, Rss ~63892, inblocks ~5483, outblocks ~14253
+n = 4000, simulation time = 1.43914 seconds
+Application 26775167 resources: utime ~2s, stime ~0s, Rss ~127248, inblocks ~5483, outblocks ~14253
+n = 8000, simulation time = 3.03436 seconds
+Application 26775173 resources: utime ~3s, stime ~0s, Rss ~253896, inblocks ~5483, outblocks ~14253
+
+Serial code is O(N^slope)
+Slope estimates are : 1.028993 1.119644 1.086995 1.076185
+Slope estimate for line fit is: 1.083027
+
+
+
+ + --------------------------------------------------------------------------
+ +        Job name: auto-hopper-serial
+ +          Job Id: 7290563.hopque01
+ +          System: hopper
+ +     Queued Time: Fri Mar  7 16:04:39 2014
+ +      Start Time: Fri Mar  7 16:06:09 2014
+ + Completion Time: Fri Mar  7 16:06:26 2014
+ +            User: junyanz
+ +        MOM Host: nid04944
+ +           Queue: debug
+ +  Req. Resources: mppdepth=1,mppnodect=1,mppnppn=1,mppwidth=1,other=QSUBPID:5748:hopper03,walltime=00:20:00
+ +  Used Resources: cput=00:00:02,mem=13164kb,vmem=84804kb,walltime=00:00:20
+ +     Acct String: mp309
+ +   PBS_O_WORKDIR: /global/u2/j/junyanz/a2
+ +     Submit Args: auto-hopper-serial
+ + --------------------------------------------------------------------------
+

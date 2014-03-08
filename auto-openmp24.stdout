@@ -1,0 +1,75 @@
+Warning: no access to tty (Bad file descriptor).
+Thus no job control in this shell.
+n = 500, simulation time = 0.231525 seconds
+Application 26777110 resources: utime ~0s, stime ~0s, Rss ~15184, inblocks ~5483, outblocks ~14253
+export: Command not found.
+n = 500,threads = 1, simulation time = 0.209647 seconds
+Application 26777112 resources: utime ~0s, stime ~0s, Rss ~15652, inblocks ~5494, outblocks ~14283
+export: Command not found.
+n = 500,threads = 2, simulation time = 0.181201 seconds
+Application 26777113 resources: utime ~1s, stime ~0s, Rss ~15968, inblocks ~5494, outblocks ~14283
+export: Command not found.
+n = 500,threads = 4, simulation time = 0.152753 seconds
+Application 26777116 resources: utime ~1s, stime ~0s, Rss ~15972, inblocks ~5494, outblocks ~14283
+export: Command not found.
+n = 500,threads = 6, simulation time = 0.143452 seconds
+Application 26777117 resources: utime ~1s, stime ~0s, Rss ~16000, inblocks ~5494, outblocks ~14283
+export: Command not found.
+n = 500,threads = 12, simulation time = 0.156014 seconds
+Application 26777118 resources: utime ~2s, stime ~0s, Rss ~16044, inblocks ~5494, outblocks ~14283
+export: Command not found.
+n = 500,threads = 18, simulation time = 0.168626 seconds
+Application 26777119 resources: utime ~3s, stime ~0s, Rss ~16164, inblocks ~5494, outblocks ~14283
+export: Command not found.
+n = 500,threads = 24, simulation time = 0.179137 seconds
+Application 26777120 resources: utime ~4s, stime ~0s, Rss ~16208, inblocks ~5494, outblocks ~14283
+export: Command not found.
+n = 1000,threads = 2, simulation time = 0.344026 seconds
+Application 26777121 resources: utime ~1s, stime ~0s, Rss ~30592, inblocks ~5494, outblocks ~14283
+export: Command not found.
+n = 2000,threads = 4, simulation time = 0.529812 seconds
+Application 26777122 resources: utime ~2s, stime ~0s, Rss ~59716, inblocks ~5494, outblocks ~14283
+export: Command not found.
+n = 3000,threads = 6, simulation time = 0.740017 seconds
+Application 26777123 resources: utime ~4s, stime ~0s, Rss ~89052, inblocks ~5494, outblocks ~14283
+export: Command not found.
+n = 6000,threads = 12, simulation time = 1.50462 seconds
+Application 26777125 resources: utime ~14s, stime ~1s, Rss ~177360, inblocks ~5494, outblocks ~14283
+export: Command not found.
+n = 9000,threads = 18, simulation time = 2.24976 seconds
+Application 26777127 resources: utime ~30s, stime ~1s, Rss ~265224, inblocks ~5494, outblocks ~14283
+export: Command not found.
+n = 12000,threads = 24, simulation time = 3.07275 seconds
+Application 26777132 resources: utime ~54s, stime ~3s, Rss ~353212, inblocks ~5494, outblocks ~14283
+
+Strong scaling estimates are :
+    1.10    1.28    1.52    1.61    1.48    1.37    1.29 (speedup)
+    1.10    0.64    0.38    0.27    0.12    0.08    0.05 (efficiency)    for
+       1       2       4       6      12      18      24 threads/processors
+
+Average strong scaling efficiency:    0.38 
+
+Weak scaling estimates are :
+    1.10    0.67    0.44    0.31    0.15    0.10    0.08 (efficiency)    for
+       1       2       4       6      12      18      24 threads/processors
+
+Average weak scaling efficiency:    0.41 
+
+
+ + --------------------------------------------------------------------------
+ +        Job name: auto-hopper-openmp24
+ +          Job Id: 7290809.hopque01
+ +          System: hopper
+ +     Queued Time: Fri Mar  7 16:52:32 2014
+ +      Start Time: Fri Mar  7 16:53:52 2014
+ + Completion Time: Fri Mar  7 16:54:23 2014
+ +            User: junyanz
+ +        MOM Host: nid04749
+ +           Queue: debug
+ +  Req. Resources: mppnodect=1,mppnppn=24,mppwidth=24,other=QSUBPID:536:hopper03,walltime=00:20:00
+ +  Used Resources: cput=00:00:06,mem=10476kb,vmem=79936kb,walltime=00:00:34
+ +     Acct String: mp309
+ +   PBS_O_WORKDIR: /global/u2/j/junyanz/a2
+ +     Submit Args: auto-hopper-openmp24
+ + --------------------------------------------------------------------------
+
