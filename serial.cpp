@@ -31,7 +31,7 @@ void binning(bin_t* _bins, particle_t* _particles, int _n) {
 	FOR (i, numBins) 
 		_bins[i].num = 0;
 	FOR (i, _n) {
-		int id = floor(_particles[i].x/cutoff) * numCols +  floor(_particles[i].y/cutoff);
+		int id = floor(_particles[i].y/cutoff) * numCols +  floor(_particles[i].x/cutoff);
 		_bins[id].ids[_bins[id].num++] = i;
 	}
 }

@@ -191,13 +191,12 @@ int main( int argc, char **argv )
 		FOR (i, numRows) {
 			FOR (j, numCols) {
 				int id = i * numCols + j; 
-			
 				bins[id].num = 0; 
 			}
 		}
 		#pragma omp for
 		FOR (i, n) {
-			int id = floor(particles[i].x/cutoff) * numCols +  floor(particles[i].y/cutoff);
+			int id = floor(particles[i].y/cutoff) * numCols +  floor(particles[i].x/cutoff);
 			omp_set_lock(locks+id);			
 			bins[id].ids[bins[id].num++] = i;
 			omp_unset_lock(locks+id);		
